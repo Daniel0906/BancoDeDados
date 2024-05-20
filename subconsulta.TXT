@@ -1,0 +1,629 @@
+SQL> ALTER USER HR IDENTIFIED BY HR ACCOUNT UNLOCK;
+
+Usuário alterado.
+
+SQL> CONNECT HR/HR
+Conectado.
+SQL> -- SUBCONSULTA AVANCADA PT1
+SQL> DESC EMPLOYEES
+ Nome                                      Nulo?    Tipo
+ ----------------------------------------- -------- ----------------------------
+ EMPLOYEE_ID                               NOT NULL NUMBER(6)
+ FIRST_NAME                                         VARCHAR2(20)
+ LAST_NAME                                 NOT NULL VARCHAR2(25)
+ EMAIL                                     NOT NULL VARCHAR2(25)
+ PHONE_NUMBER                                       VARCHAR2(20)
+ HIRE_DATE                                 NOT NULL DATE
+ JOB_ID                                    NOT NULL VARCHAR2(10)
+ SALARY                                             NUMBER(8,2)
+ COMMISSION_PCT                                     NUMBER(2,2)
+ MANAGER_ID                                         NUMBER(6)
+ DEPARTMENT_ID                                      NUMBER(4)
+
+SQL> --EXIBIR O ID DO EMPREGAD, DO GERENTE E DO CARGO QUE SAO GERENCIADOS
+SQL> --PELO MESMO GERENTE QUE OS FUNCIONARIOS COM MATRICULA 174 OU 178:
+SQL> 
+SQL> --E QUE TRABALHAM NO MESMO DEPTO. DE UM DESTES FUNCIONARIOS
+SQL> --SUBCONSULTA EMPARELHADA (DUAS OU MAIS COLUNAS NA COMPARACAO)
+SQL> 
+SQL> SELECT employee_id, manager_id, department_id FROM employees WHERE (manager_id, department_id) IN (SELECT manager_id, department_id FROM employees WHERE employee_id IN (174, 178))
+  2  SELECT employee_id, manager_id, department_id FROM employees WHERE (manager_id, department_id) IN (SELECT manager_id, department_id FROM employees WHERE employee_id IN (174, 178));
+SELECT employee_id, manager_id, department_id FROM employees WHERE (manager_id, department_id) IN (SELECT manager_id, department_id FROM employees WHERE employee_id IN (174, 178))
+*
+ERRO na linha 2:
+ORA-00933: comando SQL não encerrado adequadamente 
+
+
+SQL> SELECT employee_id, manager_id, department_id FROM employees WHERE (manager_id, department_id) IN (SELECT manager_id, department_id FROM employees WHERE employee_id IN (174, 178))
+  2  /
+
+EMPLOYEE_ID MANAGER_ID DEPARTMENT_ID                                            
+----------- ---------- -------------                                            
+        174        149            80                                            
+        175        149            80                                            
+        176        149            80                                            
+        177        149            80                                            
+        179        149            80                                            
+
+SQL> --ACRESCENTAR MAIS UMA LINHA NA QUERY PARA EXCLUIR O ID 174 E 178
+SQL> I
+  2  AND employee_id NOT IN (174,178)
+  3  /
+
+EMPLOYEE_ID MANAGER_ID DEPARTMENT_ID                                            
+----------- ---------- -------------                                            
+        175        149            80                                            
+        176        149            80                                            
+        177        149            80                                            
+        179        149            80                                            
+
+SQL> --SUBCONSULTA NA CLAUSULA FROM (VIEW DE LINHA)
+SQL> --EXIBIR O SOBRENOME, O SLARIO, O ID DO DEPTO E A MEDIA
+SQL> --(SALARIO MEDIO DO EMPREGADO DENTRO DO SEU DEPTO) DE
+SQL> --QUEM GANHA MAIS QUE A MEDIA NO SEU DEPTO
+SQL> 
+SQL> --EXIBIR A MEDIA SALARIAL POR DEPARTAMENTO:
+SQL> SELECT AVG(salary> FROM departments
+  2  /
+SELECT AVG(salary> FROM departments
+                 *
+ERRO na linha 1:
+ORA-00907: parêntese direito não encontrado 
+
+
+SQL> SELECT deaprtment_id, AVG(salary) FROM employees GROUP BY department_id
+  2  /
+SELECT deaprtment_id, AVG(salary) FROM employees GROUP BY department_id
+       *
+ERRO na linha 1:
+ORA-00904: "DEAPRTMENT_ID": identificador inválido 
+
+
+SQL> SELECT department_id, AVG(salary) FROM employees GROUP BY department_id
+  2  /
+
+DEPARTMENT_ID AVG(SALARY)                                                       
+------------- -----------                                                       
+          100  8601,33333                                                       
+           30        4150                                                       
+                     7000                                                       
+           90  19333,3333                                                       
+           20        9500                                                       
+           70       10000                                                       
+          110       10154                                                       
+           50  3475,55556                                                       
+           80  8955,88235                                                       
+           40        6500                                                       
+           60        5760                                                       
+
+DEPARTMENT_ID AVG(SALARY)                                                       
+------------- -----------                                                       
+           10        4400                                                       
+
+12 linhas selecionadas.
+
+SQL> COMMIT
+  2  /
+
+Commit concluído.
+
+SQL> COMMIT/
+  2  /
+COMMIT/
+      *
+ERRO na linha 1:
+ORA-02185: um token diferente de WORK após COMMIT 
+
+
+SQL> SELECT e.last_name, e.salary, e.department_id, m.media
+  2  FROM employees e,
+  3  (SELECT department_id, AVG(salary) media>
+  4  FROM employees
+  5  /
+(SELECT department_id, AVG(salary) media>
+                                        *
+ERRO na linha 3:
+ORA-00923: palavra-chave FROM não localizada onde esperada 
+
+
+SQL> SELECT e.last_name, e.salary, e.department_id, m.media
+  2  FROM employees e,
+  3  (SELECT department_id, AVG(salary) media
+  4  FROM employees
+  5  GROUP BY department_id> m
+  6  WHERE e.department_id = m.department_id
+  7  AND e.salary > m.media
+  8  ORDER BY 3
+  9  /
+GROUP BY department_id> m
+                      *
+ERRO na linha 5:
+ORA-00907: parêntese direito não encontrado 
+
+
+SQL> SELECT e.last_name, e.salary, e.department_id, m.media
+  2  FROM employees e,
+  3  (SELECT department_id, AVG(salary) media
+  4  FROM employees
+  5  GROUP BY department_id> m
+  6  WHERE e.department_id = m.department_id
+  7  AND e.salary > m.media
+  8  ORDER BY 3
+  9  /
+GROUP BY department_id> m
+                      *
+ERRO na linha 5:
+ORA-00907: parêntese direito não encontrado 
+
+
+SQL> ed;
+Gravou file afiedt.buf
+
+  1  SELECT e.last_name, e.salary, e.department_id, m.media
+  2  FROM employees e,
+  3  (SELECT department_id, AVG(salary) media
+  4  FROM employees
+  5  GROUP BY department_id) m
+  6  WHERE e.department_id = m.department_id
+  7  AND e.salary > m.media
+  8* ORDER BY 3
+SQL> /
+
+LAST_NAME                     SALARY DEPARTMENT_ID      MEDIA                   
+------------------------- ---------- ------------- ----------                   
+Hartstein                      13000            20       9500                   
+Raphaely                       11000            30       4150                   
+Weiss                           8000            50 3475,55556                   
+Fripp                           8200            50 3475,55556                   
+Kaufling                        7900            50 3475,55556                   
+Vollman                         6500            50 3475,55556                   
+Mourgos                         5800            50 3475,55556                   
+Ladwig                          3600            50 3475,55556                   
+Rajs                            3500            50 3475,55556                   
+Sarchand                        4200            50 3475,55556                   
+Bull                            4100            50 3475,55556                   
+
+LAST_NAME                     SALARY DEPARTMENT_ID      MEDIA                   
+------------------------- ---------- ------------- ----------                   
+Chung                           3800            50 3475,55556                   
+Dilly                           3600            50 3475,55556                   
+Bell                            4000            50 3475,55556                   
+Everett                         3900            50 3475,55556                   
+Hunold                          9000            60       5760                   
+Ernst                           6000            60       5760                   
+Russell                        14000            80 8955,88235                   
+Partners                       13500            80 8955,88235                   
+Errazuriz                      12000            80 8955,88235                   
+Cambrault                      11000            80 8955,88235                   
+Zlotkey                        10500            80 8955,88235                   
+
+LAST_NAME                     SALARY DEPARTMENT_ID      MEDIA                   
+------------------------- ---------- ------------- ----------                   
+Tucker                         10000            80 8955,88235                   
+Bernstein                       9500            80 8955,88235                   
+Hall                            9000            80 8955,88235                   
+King                           10000            80 8955,88235                   
+Sully                           9500            80 8955,88235                   
+McEwen                          9000            80 8955,88235                   
+Vishney                        10500            80 8955,88235                   
+Greene                          9500            80 8955,88235                   
+Ozer                           11500            80 8955,88235                   
+Bloom                          10000            80 8955,88235                   
+Fox                             9600            80 8955,88235                   
+
+LAST_NAME                     SALARY DEPARTMENT_ID      MEDIA                   
+------------------------- ---------- ------------- ----------                   
+Abel                           11000            80 8955,88235                   
+King                           24000            90 19333,3333                   
+Greenberg                      12008           100 8601,33333                   
+Faviet                          9000           100 8601,33333                   
+Higgins                        12008           110      10154                   
+
+38 linhas selecionadas.
+
+SQL> --OPERADOR ANY:
+SQL> --EXIBIR O ID DO EMPREGADO, O SOBRENOME, O ID DO CARGO E O SALARIO
+SQL> --DOS FUNCIONARIOS QUE GANHAM MENOS QUE O MAIOR SALARIO DO
+SQL> --EMPREGADO COM ID DE PROGRAMADOR(IT_PROG) E QUE NAO
+SQL> --TRABALHAM COMO PROGRAMADOR
+SQL> --A) QUAL O SALARIO DE UM PROGRAMADOR?
+SQL> SELECT salary FROM employees
+  2  WHERE job_id = 'IT_PROG' ORDER BY 1;
+
+    SALARY                                                                      
+----------                                                                      
+      4200                                                                      
+      4800                                                                      
+      4800                                                                      
+      6000                                                                      
+      9000                                                                      
+
+SQL> SELECT employee_id, last_name, job_id, salary
+  2  FROM employees
+  3  WHERE salary < ANY (SELECT salary
+  4  FROM employees WHERE job_id = 'IT_PROG')
+  5  AND job_id <> 'IT_PROG';
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        132 Olson                     ST_CLERK         2100                     
+        136 Philtanker                ST_CLERK         2200                     
+        128 Markle                    ST_CLERK         2200                     
+        135 Gee                       ST_CLERK         2400                     
+        127 Landry                    ST_CLERK         2400                     
+        191 Perkins                   SH_CLERK         2500                     
+        182 Sullivan                  SH_CLERK         2500                     
+        144 Vargas                    ST_CLERK         2500                     
+        140 Patel                     ST_CLERK         2500                     
+        131 Marlow                    ST_CLERK         2500                     
+        119 Colmenares                PU_CLERK         2500                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        118 Himuro                    PU_CLERK         2600                     
+        198 OConnell                  SH_CLERK         2600                     
+        199 Grant                     SH_CLERK         2600                     
+        143 Matos                     ST_CLERK         2600                     
+        126 Mikkilineni               ST_CLERK         2700                     
+        139 Seo                       ST_CLERK         2700                     
+        117 Tobias                    PU_CLERK         2800                     
+        183 Geoni                     SH_CLERK         2800                     
+        130 Atkinson                  ST_CLERK         2800                     
+        195 Jones                     SH_CLERK         2800                     
+        190 Gates                     SH_CLERK         2900                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        116 Baida                     PU_CLERK         2900                     
+        134 Rogers                    ST_CLERK         2900                     
+        197 Feeney                    SH_CLERK         3000                     
+        187 Cabrio                    SH_CLERK         3000                     
+        115 Khoo                      PU_CLERK         3100                     
+        196 Walsh                     SH_CLERK         3100                     
+        142 Davies                    ST_CLERK         3100                     
+        181 Fleaur                    SH_CLERK         3100                     
+        194 McCain                    SH_CLERK         3200                     
+        138 Stiles                    ST_CLERK         3200                     
+        125 Nayer                     ST_CLERK         3200                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        180 Taylor                    SH_CLERK         3200                     
+        129 Bissot                    ST_CLERK         3300                     
+        133 Mallin                    ST_CLERK         3300                     
+        186 Dellinger                 SH_CLERK         3400                     
+        141 Rajs                      ST_CLERK         3500                     
+        137 Ladwig                    ST_CLERK         3600                     
+        189 Dilly                     SH_CLERK         3600                     
+        188 Chung                     SH_CLERK         3800                     
+        193 Everett                   SH_CLERK         3900                     
+        192 Bell                      SH_CLERK         4000                     
+        185 Bull                      SH_CLERK         4100                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        184 Sarchand                  SH_CLERK         4200                     
+        200 Whalen                    AD_ASST          4400                     
+        124 Mourgos                   ST_MAN           5800                     
+        202 Fay                       MK_REP           6000                     
+        173 Kumar                     SA_REP           6100                     
+        179 Johnson                   SA_REP           6200                     
+        167 Banda                     SA_REP           6200                     
+        166 Ande                      SA_REP           6400                     
+        123 Vollman                   ST_MAN           6500                     
+        203 Mavris                    HR_REP           6500                     
+        165 Lee                       SA_REP           6800                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        113 Popp                      FI_ACCOUNT       6900                     
+        161 Sewall                    SA_REP           7000                     
+        178 Grant                     SA_REP           7000                     
+        155 Tuvault                   SA_REP           7000                     
+        164 Marvins                   SA_REP           7200                     
+        172 Bates                     SA_REP           7300                     
+        171 Smith                     SA_REP           7400                     
+        154 Cambrault                 SA_REP           7500                     
+        160 Doran                     SA_REP           7500                     
+        111 Sciarra                   FI_ACCOUNT       7700                     
+        112 Urman                     FI_ACCOUNT       7800                     
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        122 Kaufling                  ST_MAN           7900                     
+        153 Olsen                     SA_REP           8000                     
+        159 Smith                     SA_REP           8000                     
+        120 Weiss                     ST_MAN           8000                     
+        121 Fripp                     ST_MAN           8200                     
+        110 Chen                      FI_ACCOUNT       8200                     
+        206 Gietz                     AC_ACCOUNT       8300                     
+        177 Livingston                SA_REP           8400                     
+        176 Taylor                    SA_REP           8600                     
+        175 Hutton                    SA_REP           8800                     
+
+76 linhas selecionadas.
+
+SQL> --AUMENTAR O TAMANHO DA PAGINA
+SQL> SET PAGESIZE 500
+SQL> SET PAGESIZE 500;
+SQL> --F
+SQL> 
+SQL> 
+SQL> --EXERCICIO
+SQL> -- EXIBIR OS FUNCIONARIOS COM SALARIO MENOS QUE O SALARIO DE TODOS
+SQL> -- OS FUNCIONARIOS QUE SAO PROGRAMADORES E QUE O CARGO NAO
+SQL> -- SEJA PROGRAMADOR
+SQL> 
+SQL> ed;
+Gravou file afiedt.buf
+
+  1  SELECT employee_id, last_name, job_id, salary
+  2  FROM employees
+  3  WHERE salary < ALL (SELECT salary
+  4  FROM employees WHERE job_id = 'IT_PROG')
+  5* AND job_id <> 'IT_PROG'
+SQL> /
+
+EMPLOYEE_ID LAST_NAME                 JOB_ID         SALARY                     
+----------- ------------------------- ---------- ----------                     
+        185 Bull                      SH_CLERK         4100                     
+        192 Bell                      SH_CLERK         4000                     
+        193 Everett                   SH_CLERK         3900                     
+        188 Chung                     SH_CLERK         3800                     
+        137 Ladwig                    ST_CLERK         3600                     
+        189 Dilly                     SH_CLERK         3600                     
+        141 Rajs                      ST_CLERK         3500                     
+        186 Dellinger                 SH_CLERK         3400                     
+        133 Mallin                    ST_CLERK         3300                     
+        129 Bissot                    ST_CLERK         3300                     
+        180 Taylor                    SH_CLERK         3200                     
+        138 Stiles                    ST_CLERK         3200                     
+        125 Nayer                     ST_CLERK         3200                     
+        194 McCain                    SH_CLERK         3200                     
+        115 Khoo                      PU_CLERK         3100                     
+        196 Walsh                     SH_CLERK         3100                     
+        142 Davies                    ST_CLERK         3100                     
+        181 Fleaur                    SH_CLERK         3100                     
+        187 Cabrio                    SH_CLERK         3000                     
+        197 Feeney                    SH_CLERK         3000                     
+        116 Baida                     PU_CLERK         2900                     
+        190 Gates                     SH_CLERK         2900                     
+        134 Rogers                    ST_CLERK         2900                     
+        183 Geoni                     SH_CLERK         2800                     
+        130 Atkinson                  ST_CLERK         2800                     
+        117 Tobias                    PU_CLERK         2800                     
+        195 Jones                     SH_CLERK         2800                     
+        126 Mikkilineni               ST_CLERK         2700                     
+        139 Seo                       ST_CLERK         2700                     
+        143 Matos                     ST_CLERK         2600                     
+        199 Grant                     SH_CLERK         2600                     
+        118 Himuro                    PU_CLERK         2600                     
+        198 OConnell                  SH_CLERK         2600                     
+        140 Patel                     ST_CLERK         2500                     
+        131 Marlow                    ST_CLERK         2500                     
+        119 Colmenares                PU_CLERK         2500                     
+        191 Perkins                   SH_CLERK         2500                     
+        182 Sullivan                  SH_CLERK         2500                     
+        144 Vargas                    ST_CLERK         2500                     
+        127 Landry                    ST_CLERK         2400                     
+        135 Gee                       ST_CLERK         2400                     
+        128 Markle                    ST_CLERK         2200                     
+        136 Philtanker                ST_CLERK         2200                     
+        132 Olson                     ST_CLERK         2100                     
+
+44 linhas selecionadas.
+
+SQL> 
+SQL> 
+SQL> --OPERADOR EXISTS OU NOT EXISTS (FLAG - TRUE OR FALSE)
+SQL> --EXIBIR AS PESSOAS QUE TEM PELO MENOS UM SUBORDINADO
+SQL> SELECT last_name, job_id
+  2  FROM employees e
+  3  WHERE EXISTS (SELECT 'X'
+  4  FROM employees WHERE manager_id = e.employee_id);
+
+LAST_NAME                 JOB_ID                                                
+------------------------- ----------                                            
+King                      AD_PRES                                               
+Kochhar                   AD_VP                                                 
+De Haan                   AD_VP                                                 
+Hunold                    IT_PROG                                               
+Greenberg                 FI_MGR                                                
+Raphaely                  PU_MAN                                                
+Weiss                     ST_MAN                                                
+Fripp                     ST_MAN                                                
+Kaufling                  ST_MAN                                                
+Vollman                   ST_MAN                                                
+Mourgos                   ST_MAN                                                
+Russell                   SA_MAN                                                
+Partners                  SA_MAN                                                
+Errazuriz                 SA_MAN                                                
+Cambrault                 SA_MAN                                                
+Zlotkey                   SA_MAN                                                
+Hartstein                 MK_MAN                                                
+Higgins                   AC_MGR                                                
+
+18 linhas selecionadas.
+
+SQL> --ALTERAR PARA EXIBIR QUEM NAO TEM NENHUM SUBORDINADO
+SQL> ED;
+Gravou file afiedt.buf
+
+  1  SELECT last_name, job_id
+  2  FROM employees e
+  3  WHERE NOT EXISTS (SELECT 'X'
+  4* FROM employees WHERE manager_id = e.employee_id)
+SQL> /
+
+LAST_NAME                 JOB_ID                                                
+------------------------- ----------                                            
+Ernst                     IT_PROG                                               
+Austin                    IT_PROG                                               
+Pataballa                 IT_PROG                                               
+Lorentz                   IT_PROG                                               
+Faviet                    FI_ACCOUNT                                            
+Chen                      FI_ACCOUNT                                            
+Sciarra                   FI_ACCOUNT                                            
+Urman                     FI_ACCOUNT                                            
+Popp                      FI_ACCOUNT                                            
+Khoo                      PU_CLERK                                              
+Baida                     PU_CLERK                                              
+Tobias                    PU_CLERK                                              
+Himuro                    PU_CLERK                                              
+Colmenares                PU_CLERK                                              
+Nayer                     ST_CLERK                                              
+Mikkilineni               ST_CLERK                                              
+Landry                    ST_CLERK                                              
+Markle                    ST_CLERK                                              
+Bissot                    ST_CLERK                                              
+Atkinson                  ST_CLERK                                              
+Marlow                    ST_CLERK                                              
+Olson                     ST_CLERK                                              
+Mallin                    ST_CLERK                                              
+Rogers                    ST_CLERK                                              
+Gee                       ST_CLERK                                              
+Philtanker                ST_CLERK                                              
+Ladwig                    ST_CLERK                                              
+Stiles                    ST_CLERK                                              
+Seo                       ST_CLERK                                              
+Patel                     ST_CLERK                                              
+Rajs                      ST_CLERK                                              
+Davies                    ST_CLERK                                              
+Matos                     ST_CLERK                                              
+Vargas                    ST_CLERK                                              
+Tucker                    SA_REP                                                
+Bernstein                 SA_REP                                                
+Hall                      SA_REP                                                
+Olsen                     SA_REP                                                
+Cambrault                 SA_REP                                                
+Tuvault                   SA_REP                                                
+King                      SA_REP                                                
+Sully                     SA_REP                                                
+McEwen                    SA_REP                                                
+Smith                     SA_REP                                                
+Doran                     SA_REP                                                
+Sewall                    SA_REP                                                
+Vishney                   SA_REP                                                
+Greene                    SA_REP                                                
+Marvins                   SA_REP                                                
+Lee                       SA_REP                                                
+Ande                      SA_REP                                                
+Banda                     SA_REP                                                
+Ozer                      SA_REP                                                
+Bloom                     SA_REP                                                
+Fox                       SA_REP                                                
+Smith                     SA_REP                                                
+Bates                     SA_REP                                                
+Kumar                     SA_REP                                                
+Abel                      SA_REP                                                
+Hutton                    SA_REP                                                
+Taylor                    SA_REP                                                
+Livingston                SA_REP                                                
+Grant                     SA_REP                                                
+Johnson                   SA_REP                                                
+Taylor                    SH_CLERK                                              
+Fleaur                    SH_CLERK                                              
+Sullivan                  SH_CLERK                                              
+Geoni                     SH_CLERK                                              
+Sarchand                  SH_CLERK                                              
+Bull                      SH_CLERK                                              
+Dellinger                 SH_CLERK                                              
+Cabrio                    SH_CLERK                                              
+Chung                     SH_CLERK                                              
+Dilly                     SH_CLERK                                              
+Gates                     SH_CLERK                                              
+Perkins                   SH_CLERK                                              
+Bell                      SH_CLERK                                              
+Everett                   SH_CLERK                                              
+McCain                    SH_CLERK                                              
+Jones                     SH_CLERK                                              
+Walsh                     SH_CLERK                                              
+Feeney                    SH_CLERK                                              
+OConnell                  SH_CLERK                                              
+Grant                     SH_CLERK                                              
+Whalen                    AD_ASST                                               
+Fay                       MK_REP                                                
+Mavris                    HR_REP                                                
+Baer                      PR_REP                                                
+Gietz                     AC_ACCOUNT                                            
+
+89 linhas selecionadas.
+
+SQL> --EXERCICIO:
+SQL> --EXIBIR OS DEPTOS QUE NAO TEM FUNCIONARIO
+SQL> SELECT department_id
+  2  FROM departments
+  3  WHERE NOT EXISTS (SELECT employee_id FROM employees
+  4  WHERE employee_id = department_id);
+
+DEPARTMENT_ID                                                                   
+-------------                                                                   
+           10                                                                   
+           20                                                                   
+           30                                                                   
+           40                                                                   
+           50                                                                   
+           60                                                                   
+           70                                                                   
+           80                                                                   
+           90                                                                   
+          100                                                                   
+          110                                                                   
+          120                                                                   
+          130                                                                   
+          140                                                                   
+          150                                                                   
+          160                                                                   
+          170                                                                   
+          180                                                                   
+          190                                                                   
+          200                                                                   
+          210                                                                   
+          220                                                                   
+          230                                                                   
+          240                                                                   
+          250                                                                   
+          260                                                                   
+          270                                                                   
+
+27 linhas selecionadas.
+
+SQL> ed;
+Gravou file afiedt.buf
+
+  1  SELECT department_id
+  2  FROM departments d
+  3  WHERE NOT EXISTS (SELECT 'X' FROM employees
+  4* WHERE department_id = d.department_id)
+SQL> /
+
+DEPARTMENT_ID                                                                   
+-------------                                                                   
+          120                                                                   
+          130                                                                   
+          140                                                                   
+          150                                                                   
+          160                                                                   
+          170                                                                   
+          180                                                                   
+          190                                                                   
+          200                                                                   
+          210                                                                   
+          220                                                                   
+          230                                                                   
+          240                                                                   
+          250                                                                   
+          260                                                                   
+          270                                                                   
+
+16 linhas selecionadas.
+
+SQL> commit;
+
+Commit concluído.
+
+SQL> ed;
+Gravou file afiedt.buf
+
+  1* commit
+SQL> SPOOL OFF

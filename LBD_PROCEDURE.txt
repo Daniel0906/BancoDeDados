@@ -1,0 +1,90 @@
+   CREATE TABLE historico
+    (empno NUMBER(4),
+     data  DATE,
+    job   VARCHAR2(9),
+     sal   NUMBER(7,2),
+   constraint historico_pk PRIMARY KEY (empno, data));
+
+CREATE TABLE FOLHA
+ (ID INTEGER,
+ DATA DATE,
+ SALBRUTO NUMBER(8,2),
+ VALE NUMBER(8,2),
+ INSS NUMBER(8,2),
+ COMISSAO NUMBER(8,2),
+ SALLIQ NUMBER(8,2),
+CONSTRAINT folha_pk PRIMARY KEY (id, data),
+CONSTRAINT folha_fk FOREIGN KEY (id) 
+REFERENCES employees(employee_id));
+
+-- 3)
+CREATE OR REPLACE PROCEDURE prc_promocao
+    (p_id IN INTEGER, p_cargo IN VARCHAR, p_sal IN NUMBER)
+    IS
+    -- VARIAVEIS, CURSORES, CONSTANTES, EXCEPTIONS
+    v_cargo jobs.job_id%TYPE;
+    v_sal employees.salary%TYPE;
+    BEGIN
+    --consultar o salario e o cargo anterior do id informado
+    SELECT job_id, salary INTO v_cargo, v_sal
+        FROM employees WHERE employee_id = p_id;
+    --inserir os dados anteriores na tabela historico
+    INSERT INTO historico
+    VALUES (p_id, SYSDATE, v_cargo, v_sal);
+    --atualizar o salario e o cargo para o id informado
+    UPDATE employees SET job_id = UPPER(p_cargo), salary=p_sal
+    WHERE employee_id = p_id;
+    COMMIT;
+    END;
+
+    --exibir o texto da procedure criada
+    SELECT TEXT FROM USER_SOURCE WHERE NAME ='PRC_PROMOCAO';
+
+    -- Executar procedure: EXECUTE ou CALL(LINHA) APEX:
+    BEGIN
+        prc_promocao(126,'IT_PROG',7000);
+    END;
+
+    --EXCLUIR PROCEDURE
+    DROP PROCEDURE prc_promocao;
+
+    --Exercicio 3) sem parametro
+    CREATE OR REPLACE PROCEDURE prc_folha
+        IS
+            v_id INTEGER;
+            v_salbruto NUMBER(10,2);
+            --colocar o cursor com um nome e a consulta
+        CURSOR procura IS
+            SELECT employee_id, salary FROM employees;
+        BEGIN
+            OPEN procura;
+            LOOP
+                FETCH procura INTO v_id, v_salbruto;
+                EXIT WHEN procura%NOTFOUND;
+                INSERT INTO folha (id, data, salbruto) 
+                    VALUES (v_id, SYSDATE, v_salbruto);
+            END LOOP;
+            CLOSE procura;
+            COMMIT;
+            END;
+
+            BEGIN
+                prc_folha;
+            END;
+
+SELECT * FROM folha;
+
+-- Function fnc_emp
+CREATE OR REPLACE FUNCTION fnc_emp(v_id IN INTEGER)
+    RETURN NUMBER
+    IS
+        v_anual NUMBER(10,2);
+    BEGIN
+        SELECT salary * 12 INTO v_anual
+            FROM employees
+                WHERE employee_id = v_id;
+        RETURN (v_anual);
+END;
+
+SELECT employee_id, salary, fnc_emp(employee_id) "ANUAL"
+    FROM employees;

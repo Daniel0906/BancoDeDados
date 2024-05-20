@@ -1,0 +1,231 @@
+SQL> CONNECT / AS SYSDBA
+Conectado.
+SQL> ALTER USER HR IDENTIFIED BY HR ACCOUNT UNLOCK;
+
+Usuário alterado.
+
+SQL> CONNECT HR/HR
+Conectado.
+SQL> --CRIAR A VIEW vw_depto COM ID E NOME DO DEPTO
+SQL> CREATE VIEW vw_depto
+  2  AS
+  3  SELECT department_id id, department_name nome
+  4  FROM departments;
+
+View criada.
+
+SQL> DESC vw_depto;
+ Nome                                      Nulo?    Tipo
+ ----------------------------------------- -------- ----------------------------
+ ID                                        NOT NULL NUMBER(4)
+ NOME                                      NOT NULL VARCHAR2(30)
+
+SQL> --INSERIR REGISTRO USANDO VIEW (POR SER SIMPLES E POSSUIR AS COLUNAS
+SQL> --DE PREENCHIMENTO OBRIGATORIO DA TABELA ORIGINAL E POSSIVEL INSERIR
+SQL> --REGISTROS ATRAVES DELA
+SQL> INSERT INTO vw_depto VALUES (980, 'LABORATORIO 5');
+
+1 linha criada.
+
+SQL> --CONSULTAR:
+SQL> --A) VIEW
+SQL> SELECT * FROM vw_depto WHERE id = 980;
+
+        ID NOME                                                                 
+---------- ------------------------------                                       
+       980 LABORATORIO 5                                                        
+
+SQL> --B) TABELA
+SQL> SELECT * FROM departments WHERE department_id = 980;
+
+DEPARTMENT_ID DEPARTMENT_NAME                MANAGER_ID LOCATION_ID             
+------------- ------------------------------ ---------- -----------             
+          980 LABORATORIO 5                                                     
+
+SQL> --EXERCICIO) ATRAVES DA VIEW EXCLUIR O REGISTRO COM ID 980
+SQL> 
+SQL> DELETE FROM vw_depto WHERE id = 980;
+
+1 linha deletada.
+
+SQL> SELECT * FROM vw_depto;
+
+        ID NOME                                                                 
+---------- ------------------------------                                       
+        10 Administration                                                       
+        20 Marketing                                                            
+        30 Purchasing                                                           
+        40 Human Resources                                                      
+        50 Shipping                                                             
+        60 IT                                                                   
+        70 Public Relations                                                     
+        80 Sales                                                                
+        90 Executive                                                            
+       100 Finance                                                              
+       110 Accounting                                                           
+
+        ID NOME                                                                 
+---------- ------------------------------                                       
+       120 Treasury                                                             
+       130 Corporate Tax                                                        
+       140 Control And Credit                                                   
+       150 Shareholder Services                                                 
+       160 Benefits                                                             
+       170 Manufacturing                                                        
+       180 Construction                                                         
+       190 Contracting                                                          
+       200 Operations                                                           
+       210 IT Support                                                           
+       220 NOC                                                                  
+
+        ID NOME                                                                 
+---------- ------------------------------                                       
+       230 IT Helpdesk                                                          
+       240 Government Sales                                                     
+       250 Retail Sales                                                         
+       260 Recruiting                                                           
+       270 Payroll                                                              
+
+27 linhas selecionadas.
+
+SQL> COMMIT;
+
+Commit concluído.
+
+SQL> --ALTERAR A VIEW PARA QUE SEJA SOMENTE DE LEITURA
+SQL> CREATE OR REPLACE VIEW vw_depto (id, nome)
+  2  AS
+  3  SELECT department_id, department_name FROM departments
+  4  WITH READ ONLY;
+
+View criada.
+
+SQL> --EXERCICIO) INSERIR O DEPTO, CI COM O ID 990 USANDO VIEW
+SQL> INSERT INTO vw_depto VALUES (990, 'CI');
+INSERT INTO vw_depto VALUES (990, 'CI')
+*
+ERRO na linha 1:
+ORA-42399: não é possível efetuar uma operação de DML em uma view somente para 
+leitura 
+
+
+SQL> --CONSULTAR A VIEW NO DICIONARIO DE DADOS
+SQL> --A) OBJETOS DO TIPO VIEW EXISTENTES NO USUARIO:
+SQL> SELECT object_name, object_type FROM user_objects WHERE object_type = 'VIEW';
+
+OBJECT_NAME                                                                     
+--------------------------------------------------------------------------------
+OBJECT_TYPE                                                                     
+-------------------                                                             
+EMP_DETAILS_VIEW                                                                
+VIEW                                                                            
+                                                                                
+VW_DEPTO                                                                        
+VIEW                                                                            
+                                                                                
+
+SQL> --EXIBIR A ESTRUTURA DA VIEW EMP_DETAILS_VIEW:
+SQL> DESC emp_details_view;
+ Nome                                      Nulo?    Tipo
+ ----------------------------------------- -------- ----------------------------
+ EMPLOYEE_ID                               NOT NULL NUMBER(6)
+ JOB_ID                                    NOT NULL VARCHAR2(10)
+ MANAGER_ID                                         NUMBER(6)
+ DEPARTMENT_ID                                      NUMBER(4)
+ LOCATION_ID                                        NUMBER(4)
+ COUNTRY_ID                                         CHAR(2)
+ FIRST_NAME                                         VARCHAR2(20)
+ LAST_NAME                                 NOT NULL VARCHAR2(25)
+ SALARY                                             NUMBER(8,2)
+ COMMISSION_PCT                                     NUMBER(2,2)
+ DEPARTMENT_NAME                           NOT NULL VARCHAR2(30)
+ JOB_TITLE                                 NOT NULL VARCHAR2(35)
+ CITY                                      NOT NULL VARCHAR2(30)
+ STATE_PROVINCE                                     VARCHAR2(25)
+ COUNTRY_NAME                                       VARCHAR2(40)
+ REGION_NAME                                        VARCHAR2(25)
+
+SQL> --B)CONSULTAR INFORMACAO SOBRE UMA DETERMINADA VIEW
+SQL> SELECT VIEW_NAME, TEXT FROM USER_VIEWS WHERE VIEW_NAME = 'VW_DEPTO';
+
+VIEW_NAME                                                                       
+------------------------------                                                  
+TEXT                                                                            
+--------------------------------------------------------------------------------
+VW_DEPTO                                                                        
+SELECT department_id, department_name FROM departments                          
+WITH READ ONLY                                                                  
+                                                                                
+
+SQL> --ATRAVES DA VIEW PODEMOS CRIAR QUALQUER TIPO DE CONSULTA
+SQL> --EXERCICIO: CRIAS UMA CONSULTA UTILIZANO A VIEW QUE EXIBA EM ORDEM
+SQL> --ALFABETICA COM TODAS AS LETRAS MAIUSCULAS E A QTDE DE CARACTERES DO
+SQL> --NOME DO DEPRO SOMENTE DOS DEPROS COM NOMES INICIADOS EM A OU C.
+SQL> SELECT UPPER(nome) FROM vw_depto
+  2  LIKE
+  3  ;
+LIKE
+*
+ERRO na linha 2:
+ORA-00933: comando SQL não encerrado adequadamente 
+
+
+SQL> edit
+Gravou file afiedt.buf
+
+  1* SELECT UPPER(nome), LEN(nome) FROM vw_depto WHERE nome LIKE 'A%' OR 'C%' ORDER BY nome
+  2  ;
+SELECT UPPER(nome), LEN(nome) FROM vw_depto WHERE nome LIKE 'A%' OR 'C%' ORDER BY nome
+                                                                         *
+ERRO na linha 1:
+ORA-00920: operador relacional inválido 
+
+
+SQL> edit
+Gravou file afiedt.buf
+
+  1* SELECT UPPER(nome), LENGTH(nome) FROM vw_depto WHERE nome LIKE 'A%' OR nome LIKE 'C%' ORDER BY nome
+  2  ;
+
+UPPER(NOME)                    LENGTH(NOME)                                     
+------------------------------ ------------                                     
+ACCOUNTING                               10                                     
+ADMINISTRATION                           14                                     
+CONSTRUCTION                             12                                     
+CONTRACTING                              11                                     
+CONTROL AND CREDIT                       18                                     
+CORPORATE TAX                            13                                     
+
+6 linhas selecionadas.
+
+SQL> --EXCLUIR VIEW
+SQL> DROP VIEW vw_depto;
+
+View eliminada.
+
+SQL> --CRIAR UMA VIEW CHAMADA vw_resumo QUE TENHA O NOME DO DEPARTAMENTO,
+SQL> --A QUANTIDADE DE EMPREGADOS DESTE DEPARTAMENTO,
+SQL> --A SOMA SALARIAL E A MEDIA SALARIAL
+SQL> CREATE VIEW vw_resumo
+  2  (depto, qtde, soma, media)
+  3  AS
+  4  SELECT d.department_name, COUNT(e.employee_id), SUM(e.salary), AVG(e.salary)
+  5  FROM employees e, departments d
+  6  WHERE e.department_id = d.department_id
+  7  GROUP BY d.department_name;
+
+View criada.
+
+SQL> DESC vw_resumo;
+ Nome                                      Nulo?    Tipo
+ ----------------------------------------- -------- ----------------------------
+ DEPTO                                     NOT NULL VARCHAR2(30)
+ QTDE                                               NUMBER
+ SOMA                                               NUMBER
+ MEDIA                                              NUMBER
+
+SQL> --VISUALIZA A ESTRUTURA DA VIEW
+SQL> --EXIBIR OS REGISTROS
+SQL> --"TENTAR" INSERIR UM REGISTRO USANDO A VIEW...
+SQL> 
+SQL> SPOOL OFF

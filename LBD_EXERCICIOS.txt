@@ -1,0 +1,98 @@
+--Exibir o id do empregado e do cargo (atual e anterior) de todos os funcionarios (exibir somente 1 ocorrencia) e colocar apelido e ordenar pela coluna id do empregdo.
+  -- UNION traz todas as linhas consultadas
+SELECT employee_id "Id", job_id "Cargo" FROM hr.employees
+  UNION
+  SELECT employee_id, job_id FROM hr.job_history
+    ORDER BY 1
+
+-- Exercicio: Alterar para exibir tambem o id do depto atual e anterior
+SELECT employee_id "Id", job_id "Cargo", department_id "Depto" FROM hr.employees
+  UNION
+  SELECT employee_id, job_id, department_id FROM hr.job_history
+    ORDER BY 1
+
+-- Exercicio: Alterar o operador para UNNION ALL na querie anterior
+    -- UNION ALL traz todas as linhas consultadas e duplicadas
+SELECT employee_id "Id", job_id "Cargo", department_id "Depto" FROM hr.employees
+  UNION ALL
+  SELECT employee_id, job_id, department_id FROM hr.job_history
+    ORDER BY 1
+
+-- Exibir o id do empregado e do cargo dos funcionarios que possuem o MESMO CARGO quando entraram na empresa
+  -- INTERSECT traz os registros iguais entre as duas consultas
+SELECT employee_id "Id", job_id "Cargo" FROM hr.employees
+  INTERSECT
+  SELECT employee_id, job_id FROM hr.job_history
+    ORDER BY 1
+
+-- Exibir o id do empregado e do cargo dos funcionarios que NUNCA MUDARAM de funcao na empresa
+  -- MINUS subtrai a primeira com a segunda (neste exemplo traz tudo que tem na tabela employees que nao tem na job_history)
+SELECT employee_id "Id", job_id "Cargo" FROM hr.employees
+  MINUS
+  SELECT employee_id, job_id FROM hr.job_history
+
+-- CORRESPONDENTES: Nome dado quando nao ha a mesma quantidade de colunas entre duas consultas OU nao tem o mesmo tipo de dado
+-- Exercicio: Criar o enunciado para a querie a seguir:
+SELECT department_id "Id", TO_NUMBER(NULL) "Local", hire_date "Contratacao" FROM hr.employees
+  UNION
+  SELECT department_id, location_id, TO_DATE(null) FROM hr.departments
+
+-- Quando não possuimos uma coluna em comum, se transforma o dado em nulo usando funcoes de conversoes e obrigatoriamente deve-se colocar um apelido no primeiro SELECT
+-- Tambem e possivel usando LITERAL:
+SELECT employee_id, job_id, salary FROM hr.employees
+  UNION
+  SELECT employee_id, job_id, 0 FROM hr.job_history
+
+-- SUBQUERIES: CONDIÇÃO QUE PRECISA SER CONHECIDA PARA QUE RETORNE VALOR. SEMPRE APARECE DO LADO DIREITO DA CONSULTA ENTRE PARÊNTESES. PODE SER EMPARELHADA OU NAO EMPARELHADA
+-- PODE RETORNAR UM REGISTRO (OPERADORES: >, <, >=, <=, != OU <> (DIFERENTE)
+-- MAIS DE UM REGISTRO (OPERADORES: IN, <ANY, >ANY, <ALL, >ALL)
+
+-- Exibir o sobrenome e o salario de quem ganha mais que o funcionario com sobrenome Abel
+  -- a) Quanto Abel ganha?
+      SELECT salary "Salario" FROM hr.employees 
+        WHERE last_name = 'Abel'
+  -- b) Exibir quem ganha mais que o Abel
+      SELECT last_name, salary FROM hr.employees
+        WHERE salary > (SELECT salary FROM hr.employees WHERE last_name = 'Abel')
+
+-- Alterar o salario do funcionario com sobrenome Abel com 50% de aumento
+UPDATE hr.employees
+  SET salary = salary * 1.50
+WHERE last_name = 'Abel';
+
+-- Exercicio: Exibir o sobrenome e o id do cargo dos empregados que possuem o MESMO CARGO (=) que o empregado com id 141
+SELECT last_name "Sobrenome", job_id "Job Id" FROM hr.employees 
+  WHERE job_id = (SELECT job_id FROM hr.employees WHERE employee_id = 141)
+
+-- Alterar para exibir SOMENTE quem tem o salario maior que o do empregado com id 125
+SELECT last_name "Sobrenome", job_id "Job Id", salary "Salario" FROM hr.employees 
+  WHERE job_id = (SELECT job_id FROM hr.employees WHERE employee_id = 141) 
+  AND salary > (SELECT salary FROM hr.employees WHERE employee_id = 125)
+
+-- Exibir o sobrenome, o titulo do cargo e o salario dos empregados que recebem o salario minimo
+  -- a) Qual é o salario minimo?
+          SELECT MIN(salary) FROM hr.employees
+  -- b) Relacionar a tabela EMPLOYEES com JOBS atraves da coluna job_id
+          SELECT e.last_name, j.job_title, e.salary FROM hr.employees e, hr.jobs j
+            WHERE e.job_id = j.job_id
+            AND e.salary = (SELECT MIN(salary) FROM hr.employees)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
